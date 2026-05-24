@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: multicloud
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: web-app
+        tier: frontend
+    spec:
+      containers:
+      - name: web
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        env:
+        - name: CLUSTER_NAME
+          value: "AWS"
+        - name: DATABASE_URL
+          value: "http://172.19.255.201"
+        volumeMounts:
+        - name: web-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: web-config
+        configMap:
+          name: web-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+  namespace: multicloud
+data:
+  default.conf: |
+    server {
+        listen 80;
+        location / {
+            return 200 'Web App running on AWS Cluster - Connected to GCP Database';
+            add_header Content-Type text/plain;
+        }
+        location /health {
+            return 200 'OK';
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app
+  namespace: multicloud
+spec:
+  selector:
+    app: web-app
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer

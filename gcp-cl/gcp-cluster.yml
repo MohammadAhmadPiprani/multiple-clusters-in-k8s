@@ -1,0 +1,17 @@
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+name: gcp-cluster
+networking:
+  podSubnet: "10.245.0.0/16"
+  serviceSubnet: "10.246.0.0/16"
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6444
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArguments:
+        node-labels: "cloud=gcp,region=us-central1"
+

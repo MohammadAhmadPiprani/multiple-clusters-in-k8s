@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-registry
+  namespace: multicloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-registry
+  template:
+    metadata:
+      labels:
+        app: service-registry
+    spec:
+      containers:
+      - name: registry
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: registry-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: registry-config
+        configMap:
+          name: registry-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  namespace: multicloud
+data:
+  default.conf: |
+    server {
+        listen 80;
+        location /health {
+            return 200 'AWS Service Registry OK';
+            add_header Content-Type text/plain;
+        }
+        location /services {
+            return 200 '{"cluster": "aws", "services": ["web-app", "api-service"]}';
+            add_header Content-Type application/json;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-registry
+  namespace: multicloud
+spec:
+  selector:
+    app: service-registry
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer

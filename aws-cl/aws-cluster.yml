@@ -1,0 +1,21 @@
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+name: aws-cluster
+networking:
+  podSubnet: "10.242.0.0/16"
+  serviceSubnet: "10.243.0.0/16"
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6443
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArguments:
+        node-labels: "cloud=aws,region=us-east-1"
+
+
+
+
+

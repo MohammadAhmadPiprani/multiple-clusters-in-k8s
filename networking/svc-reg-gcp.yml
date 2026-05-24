@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-registry
+  namespace: multicloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-registry
+  template:
+    metadata:
+      labels:
+        app: service-registry
+    spec:
+      containers:
+      - name: registry
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: reg-vol
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: reg-vol
+        configMap:
+          name: regis-cm
+
+
+
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: regis-cm
+  namespace: multicloud
+data:
+  registry.conf: |
+    server {
+        listen 80;
+        location /health {
+          return 200 "GCP SVC REGISTRY IS OK";
+          add_header Content-type text/plain;
+        }
+        location /services {
+          return 200 '{"cluster": "gcp", "services": ["database", "cache-service"]}';
+          add_header content-type application/json;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: regi-svc
+  namespace: multicloud
+spec:
+  selector:
+    app: service-registry
+  ports:
+  - targetPort: 80
+    port: 80
+  type: LoadBalancer
+  
+    
+  

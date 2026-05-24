@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: multicloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: database
+        tier: backend
+    spec:
+      containers:
+      - name: db
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        env:
+        - name: CLUSTER_NAME
+          value: "GCP"
+        volumeMounts:
+        - name: db-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: db-config
+        configMap:
+          name: db-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+  namespace: multicloud
+data:
+  default.conf: |
+    server {
+        listen 80;
+        location / {
+            return 200 '{"status": "connected", "cluster": "GCP", "data": "sample_data"}';
+            add_header Content-Type application/json;
+        }
+        location /health {
+            return 200 'Database OK';
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database
+  namespace: multicloud
+spec:
+  selector:
+    app: database
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer

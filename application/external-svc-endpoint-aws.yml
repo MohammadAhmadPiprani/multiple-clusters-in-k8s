@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gcp-database
+  namespace: multicloud
+spec:
+  type: ExternalName
+  externalName: database.multicloud.svc.cluster.local
+  ports:
+  - port: 80
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: gcp-database-direct
+  namespace: multicloud
+subsets:
+- addresses:
+  - ip: 172.18.255.231  # This will be updated with actual GCP service IP
+  ports:
+  - port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gcp-database-direct
+  namespace: multicloud
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
